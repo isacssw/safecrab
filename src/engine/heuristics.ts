@@ -176,7 +176,7 @@ function generateContextFindings(context: NetworkContext): Finding[] {
   if (!context.firewall.statusKnown) {
     // Could not determine firewall status (likely needs sudo)
     findings.push({
-      severity: "info",
+      severity: "warning",
       title: "Firewall status could not be determined",
       description: "Unable to read UFW status. This usually happens when running without root.",
       recommendation: "Run with sudo to see accurate UFW firewall status.",
@@ -192,7 +192,7 @@ function generateContextFindings(context: NetworkContext): Finding[] {
   } else {
     // Firewall is not active (negative finding)
     findings.push({
-      severity: "info",
+      severity: "warning",
       title: "No firewall detected",
       description: "UFW firewall is not active. All ports may be accessible from the internet.",
       recommendation: "Consider enabling UFW to control inbound traffic: sudo ufw enable",
