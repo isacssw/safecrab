@@ -212,7 +212,8 @@ function generateContextFindings(context: NetworkContext): Finding[] {
     findings.push({
       severity: "warning",
       title: "Tailscale is not connected",
-      description: "Tailscale VPN is not active. Secure private access to this machine is unavailable.",
+      description:
+        "Tailscale VPN is not active. Secure private access to this machine is unavailable.",
       recommendation: "Start Tailscale for secure access: tailscale up",
       icon: "warning",
     });
@@ -221,7 +222,8 @@ function generateContextFindings(context: NetworkContext): Finding[] {
     findings.push({
       severity: "info",
       title: "Tailscale not installed",
-      description: "Tailscale VPN is not installed. Consider installing it for secure private access to this machine.",
+      description:
+        "Tailscale VPN is not installed. Consider installing it for secure private access to this machine.",
       recommendation: "Install from https://tailscale.com or your package manager.",
     });
   }
