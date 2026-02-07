@@ -158,7 +158,7 @@ fi
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/safecrab.git
+git clone https://github.com/isacssw/safecrab.git
 cd safecrab
 
 # Install dependencies
