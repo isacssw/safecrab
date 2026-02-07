@@ -22,7 +22,11 @@ export function renderSummary(stats: SummaryStats): string {
 
   // Root warning if not running as root
   if (!stats.isRoot) {
-    lines.push(colors.warning(`${icons.warning} Running without root may hide some services.`));
+    lines.push(
+      colors.warning(
+        `${icons.warning} Running without root may hide some services and can show incorrect firewall or process info.`
+      )
+    );
     lines.push(colors.dim("   For full visibility, run Safecrab with sudo."));
     lines.push("");
   }

@@ -7,6 +7,7 @@ import { commandExists, execCommand } from "../shell.js";
 export interface FirewallStatus {
   enabled: boolean;
   defaultInbound: "allow" | "deny" | "unknown";
+  statusKnown: boolean;
 }
 
 export async function collectFirewallStatus(): Promise<FirewallStatus> {
@@ -18,6 +19,7 @@ export async function collectFirewallStatus(): Promise<FirewallStatus> {
       return {
         enabled: false,
         defaultInbound: "allow",
+        statusKnown: true,
       };
     }
 
@@ -27,9 +29,11 @@ export async function collectFirewallStatus(): Promise<FirewallStatus> {
     });
 
     if (!result.success) {
+      // UFW command failed (likely permission denied without sudo)
       return {
         enabled: false,
         defaultInbound: "unknown",
+        statusKnown: false,
       };
     }
 
@@ -60,12 +64,14 @@ export async function collectFirewallStatus(): Promise<FirewallStatus> {
     return {
       enabled: isActive,
       defaultInbound,
+      statusKnown: true,
     };
   } catch (error) {
-    // Best-effort: assume no firewall
+    // Best-effort: could not determine status
     return {
       enabled: false,
       defaultInbound: "allow",
+      statusKnown: false,
     };
   }
 }

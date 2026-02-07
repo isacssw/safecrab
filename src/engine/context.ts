@@ -21,6 +21,7 @@ export async function buildNetworkContext(): Promise<NetworkContext> {
     firewall: {
       enabled: firewall.enabled,
       defaultInbound: firewall.defaultInbound,
+      statusKnown: firewall.statusKnown,
     },
     tailscale: {
       installed: tailscale.installed,

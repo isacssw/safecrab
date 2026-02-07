@@ -15,6 +15,7 @@ export interface NetworkContext {
   firewall: {
     enabled: boolean;
     defaultInbound: "allow" | "deny" | "unknown";
+    statusKnown: boolean;
   };
   tailscale: {
     installed: boolean;
@@ -46,4 +47,5 @@ export interface Finding {
   description: string;
   recommendation?: string;
   service?: ListeningService;
+  icon?: "tick" | "warning";
 }

@@ -11,6 +11,7 @@ describe("risk heuristics", () => {
     firewall: {
       enabled: false,
       defaultInbound: "allow",
+      statusKnown: true,
     },
     tailscale: {
       installed: false,
@@ -154,5 +155,66 @@ describe("risk heuristics", () => {
 
     // Critical findings should come first
     expect(findings[0]?.severity).toBe("critical");
+  });
+
+  it("should deduplicate findings for same port (IPv4 + IPv6)", () => {
+    // Same port on both IPv4 and IPv6 (like ss shows 0.0.0.0:22 and [::]:22)
+    const exposures: ServiceExposure[] = [
+      {
+        service: {
+          port: 22,
+          protocol: "tcp",
+          process: "sshd",
+          pid: 1234,
+          interfaces: ["eth0"],
+          boundIp: "0.0.0.0",
+        },
+        paths: ["public-internet"],
+      },
+      {
+        service: {
+          port: 22,
+          protocol: "tcp",
+          process: "sshd",
+          pid: 1234,
+          interfaces: ["eth0"],
+          boundIp: "::",
+        },
+        paths: ["public-internet"],
+      },
+    ];
+
+    const findings = analyzeExposures(exposures, mockContext);
+
+    // Should have only one "Service exposed to public internet" for port 22
+    const publicExposureFindings = findings.filter(
+      (f) => f.title === "Service exposed to public internet" && f.service?.port === 22
+    );
+    expect(publicExposureFindings.length).toBe(1);
+  });
+
+  it("should use warning icon for unknown firewall status", () => {
+    const contextUnknownFirewall: NetworkContext = {
+      ...mockContext,
+      firewall: {
+        enabled: false,
+        defaultInbound: "unknown",
+        statusKnown: false,
+      },
+    };
+
+    const findings = analyzeExposures([], contextUnknownFirewall);
+
+    const firewallFinding = findings.find((f) => f.title.includes("Firewall status"));
+    expect(firewallFinding).toBeDefined();
+    expect(firewallFinding?.icon).toBe("warning");
+  });
+
+  it("should use warning icon for no firewall detected", () => {
+    const findings = analyzeExposures([], mockContext);
+
+    const firewallFinding = findings.find((f) => f.title === "No firewall detected");
+    expect(firewallFinding).toBeDefined();
+    expect(firewallFinding?.icon).toBe("warning");
   });
 });

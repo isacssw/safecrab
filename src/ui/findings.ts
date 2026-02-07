@@ -51,7 +51,7 @@ function renderFinding(finding: Finding): string {
   const lines: string[] = [];
 
   // Icon + title
-  const icon = getIcon(finding.severity);
+  const icon = getIcon(finding);
   const colorFn = getColor(finding.severity);
   lines.push(colorFn(`${icon} ${finding.title}`));
 
@@ -71,8 +71,17 @@ function renderFinding(finding: Finding): string {
   return lines.join(spacing.line);
 }
 
-function getIcon(severity: string): string {
-  switch (severity) {
+function getIcon(finding: Finding): string {
+  // Use icon override if specified
+  if (finding.icon === "warning") {
+    return icons.warning;
+  }
+  if (finding.icon === "tick") {
+    return icons.tick;
+  }
+
+  // Default icon based on severity
+  switch (finding.severity) {
     case "critical":
       return icons.cross;
     case "warning":

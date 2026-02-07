@@ -33,8 +33,11 @@ export function analyzeExposures(exposures: ServiceExposure[], context: NetworkC
   const contextFindings = generateContextFindings(context);
   findings.push(...contextFindings);
 
+  // Deduplicate findings (same rule + same port = one finding)
+  const deduplicated = deduplicateFindings(findings);
+
   // Sort by severity
-  return sortBySeverity(findings);
+  return sortBySeverity(deduplicated);
 }
 
 /**
@@ -145,24 +148,55 @@ function checkTailscaleUnused(exposure: ServiceExposure, context: NetworkContext
 }
 
 /**
+ * Deduplicate findings by (severity, title, port)
+ * Prevents duplicate warnings for the same port (e.g. IPv4 + IPv6)
+ */
+function deduplicateFindings(findings: Finding[]): Finding[] {
+  const seen = new Set<string>();
+  const deduplicated: Finding[] = [];
+
+  for (const finding of findings) {
+    const key = `${finding.severity}:${finding.title}:${finding.service?.port ?? 0}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(finding);
+    }
+  }
+
+  return deduplicated;
+}
+
+/**
  * Generate informational findings about network context
  */
 function generateContextFindings(context: NetworkContext): Finding[] {
   const findings: Finding[] = [];
 
   // Firewall status
-  if (context.firewall.enabled) {
+  if (!context.firewall.statusKnown) {
+    // Could not determine firewall status (likely needs sudo)
+    findings.push({
+      severity: "info",
+      title: "Firewall status could not be determined",
+      description: "Unable to read UFW status. This usually happens when running without root.",
+      recommendation: "Run with sudo to see accurate UFW firewall status.",
+      icon: "warning",
+    });
+  } else if (context.firewall.enabled) {
+    // Firewall is active
     findings.push({
       severity: "info",
       title: "Firewall is enabled",
       description: `UFW firewall is active with default inbound policy: ${context.firewall.defaultInbound}.`,
     });
   } else {
+    // Firewall is not active (negative finding)
     findings.push({
       severity: "info",
       title: "No firewall detected",
       description: "UFW firewall is not active. All ports may be accessible from the internet.",
       recommendation: "Consider enabling UFW to control inbound traffic: sudo ufw enable",
+      icon: "warning",
     });
   }
 
