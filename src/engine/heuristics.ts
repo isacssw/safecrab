@@ -207,6 +207,23 @@ function generateContextFindings(context: NetworkContext): Finding[] {
       title: "Tailscale is connected",
       description: "Tailscale VPN is active and available for secure access.",
     });
+  } else if (context.tailscale.installed) {
+    // Tailscale is installed but not connected
+    findings.push({
+      severity: "warning",
+      title: "Tailscale is not connected",
+      description: "Tailscale VPN is not active. Secure private access to this machine is unavailable.",
+      recommendation: "Start Tailscale for secure access: tailscale up",
+      icon: "warning",
+    });
+  } else {
+    // Tailscale is not installed
+    findings.push({
+      severity: "info",
+      title: "Tailscale not installed",
+      description: "Tailscale VPN is not installed. Consider installing it for secure private access to this machine.",
+      recommendation: "Install from https://tailscale.com or your package manager.",
+    });
   }
 
   // Cloudflare tunnel

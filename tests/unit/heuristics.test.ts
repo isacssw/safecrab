@@ -217,4 +217,50 @@ describe("risk heuristics", () => {
     expect(firewallFinding).toBeDefined();
     expect(firewallFinding?.icon).toBe("warning");
   });
+
+  it("should warn when tailscale is installed but not connected", () => {
+    const contextTailscaleInstalled: NetworkContext = {
+      ...mockContext,
+      tailscale: {
+        installed: true,
+        connected: false,
+      },
+    };
+
+    const findings = analyzeExposures([], contextTailscaleInstalled);
+
+    const warnings = findings.filter((f) => f.severity === "warning");
+    const tailscaleFinding = warnings.find((f) => f.title.includes("Tailscale is not connected"));
+    expect(tailscaleFinding).toBeDefined();
+    expect(tailscaleFinding?.recommendation).toContain("tailscale up");
+    expect(tailscaleFinding?.icon).toBe("warning");
+  });
+
+  it("should show info when tailscale is not installed", () => {
+    // mockContext already has tailscale not installed
+    const findings = analyzeExposures([], mockContext);
+
+    const info = findings.filter((f) => f.severity === "info");
+    const tailscaleFinding = info.find((f) => f.title.includes("Tailscale not installed"));
+    expect(tailscaleFinding).toBeDefined();
+    expect(tailscaleFinding?.recommendation).toContain("tailscale.com");
+  });
+
+  it("should show info when tailscale is connected", () => {
+    const contextTailscaleConnected: NetworkContext = {
+      ...mockContext,
+      tailscale: {
+        installed: true,
+        connected: true,
+        interface: "tailscale0",
+      },
+    };
+
+    const findings = analyzeExposures([], contextTailscaleConnected);
+
+    const info = findings.filter((f) => f.severity === "info");
+    const tailscaleFinding = info.find((f) => f.title === "Tailscale is connected");
+    expect(tailscaleFinding).toBeDefined();
+    expect(tailscaleFinding?.description).toContain("active and available");
+  });
 });
