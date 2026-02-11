@@ -21,8 +21,13 @@
     "prepublishOnly": "pnpm build"
   },
   "keywords": ["security", "scanner", "vps", "cli", "exposure-detection"],
-  "author": "",
+  "author": "Isac Silva",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isacssw/safecrab.git"
+  },
   "license": "MIT",
+  "files": ["dist"],
   "dependencies": {
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",
