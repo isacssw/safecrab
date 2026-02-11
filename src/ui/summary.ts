@@ -28,6 +28,11 @@ export function renderSummary(stats: SummaryStats): string {
       )
     );
     lines.push(colors.dim("   For full visibility, run Safecrab with sudo."));
+    lines.push(
+      colors.dim(
+        "   If the command is not found under sudo, install globally: sudo npm install -g safecrab"
+      )
+    );
     lines.push("");
   }
 

@@ -25,6 +25,8 @@ Not just "Is the firewall enabled?"
 
 ## Installation
 
+### Quick start (without sudo)
+
 ```bash
 npm install -g safecrab
 ```
@@ -34,6 +36,22 @@ Or use directly with `npx`:
 ```bash
 npx safecrab scan
 ```
+
+### For use with sudo (recommended for full visibility)
+
+To run `sudo safecrab scan`, install globally as root so the command is available system-wide:
+
+```bash
+sudo npm install -g safecrab
+```
+
+Then run:
+
+```bash
+sudo safecrab scan
+```
+
+> **Note**: If you installed as your user (without `sudo`), the `safecrab` command won't be available to root. Running `sudo safecrab` will show "command not found". Use the system-wide install above to fix this.
 
 ## Usage
 
@@ -153,6 +171,41 @@ fi
 - **Runtime**: Node.js 20 or later
 - **Commands**: `ss`, `ip` (standard on most Linux systems)
 - **Optional**: `ufw`, `tailscale`, `cloudflared` for enhanced detection
+
+## Troubleshooting
+
+### `sudo: safecrab: command not found`
+
+You installed globally as your user. The `safecrab` binary is in your user's PATH but not in root's PATH.
+
+**Solution**: Install globally as root:
+
+```bash
+sudo npm install -g safecrab
+```
+
+Then run:
+
+```bash
+sudo safecrab scan
+```
+
+### `npm error config prefix cannot be changed from project config`
+
+This error can appear when using `sudo npx safecrab scan` if npm picks up your user's npm config under sudo.
+
+**Solution**: Use the global install approach instead of `npx`:
+
+```bash
+sudo npm install -g safecrab
+sudo safecrab scan
+```
+
+Alternatively, if you don't need full visibility, run without sudo:
+
+```bash
+npx safecrab scan
+```
 
 ## Development
 
