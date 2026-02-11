@@ -88,11 +88,17 @@ CRITICAL
 
 WARNINGS
 ⚠ Service exposed to public internet
-  Port 22 (sshd) is accessible from the public internet.
+  Port 22 (sshd) (SSH remote access) appears reachable from the public internet.
+
+  Why flagged:
+    Service bound to 0.0.0.0 on public interface(s): eth0.
+  Confidence: medium
+  Context: Firewall default policy is deny, but specific allow rules were not inspected.
 
   Recommendation:
-    Verify this service should be publicly accessible. If not, bind to
-    localhost or use firewall rules.
+    Use key-based authentication only (disable password auth). Disable root login.
+    Consider allowlisting source IPs or using Tailscale for private access instead
+    of public exposure.
 
 INFO
 ✔ Firewall is enabled

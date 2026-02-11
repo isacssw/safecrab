@@ -3,6 +3,7 @@
  * Each rule returns Finding | null
  */
 
+import { getEnhancedRecommendation, getPortIntent } from "./port-profiles.js";
 import type { Finding, FindingSeverity, NetworkContext, ServiceExposure } from "./types.js";
 
 /**
@@ -22,7 +23,7 @@ export function analyzeExposures(exposures: ServiceExposure[], context: NetworkC
     if (aiServiceExposure) findings.push(aiServiceExposure);
 
     // Warning rules
-    const publicExposure = checkPublicExposure(exposure);
+    const publicExposure = checkPublicExposure(exposure, context);
     if (publicExposure) findings.push(publicExposure);
 
     const tailscaleUnused = checkTailscaleUnused(exposure, context);
@@ -94,7 +95,7 @@ function checkHighRiskAIService(exposure: ServiceExposure): Finding | null {
  * Rule 3: Public exposure (WARNING)
  * Service exposed to public internet (but not high-risk)
  */
-function checkPublicExposure(exposure: ServiceExposure): Finding | null {
+function checkPublicExposure(exposure: ServiceExposure, context?: NetworkContext): Finding | null {
   const { service, paths } = exposure;
 
   if (!paths.includes("public-internet")) {
@@ -109,13 +110,39 @@ function checkPublicExposure(exposure: ServiceExposure): Finding | null {
     return null; // Already handled by checkHighRiskAIService
   }
 
+  // Get port-specific intent if available
+  const portIntent = getPortIntent(service);
+  const intentLabel = portIntent ? ` (${portIntent})` : "";
+
+  // Build description with calibrated language
+  const description = `Port ${service.port} (${service.process})${intentLabel} appears reachable from the public internet.`;
+
+  // Build why flagged explanation
+  const whyFlagged = `Service bound to ${service.boundIp} on public interface(s): ${service.interfaces.filter((i) => i !== "lo").join(", ")}.`;
+
+  // Build context notes about detection limitations
+  let contextNotes = "Detection is based on interface binding.";
+  if (context?.firewall.enabled && context.firewall.defaultInbound === "deny") {
+    contextNotes +=
+      " Firewall default policy is deny, but specific allow rules were not inspected.";
+  } else if (!context?.firewall.enabled) {
+    contextNotes += " No active firewall detected.";
+  }
+
+  // Get port-specific recommendation or use default
+  const defaultRecommendation =
+    "Verify this service should be publicly accessible. If not, bind to localhost or use firewall rules.";
+  const recommendation = getEnhancedRecommendation(service, defaultRecommendation);
+
   return {
     severity: "warning",
     title: "Service exposed to public internet",
-    description: `Port ${service.port} (${service.process}) is accessible from the public internet.`,
-    recommendation:
-      "Verify this service should be publicly accessible. If not, bind to localhost or use firewall rules.",
+    description,
+    recommendation,
     service,
+    whyFlagged,
+    confidence: "medium",
+    contextNotes,
   };
 }
 

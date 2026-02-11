@@ -41,6 +41,8 @@ export interface ServiceExposure {
 
 export type FindingSeverity = "info" | "warning" | "critical";
 
+export type FindingConfidence = "high" | "medium" | "low";
+
 export interface Finding {
   severity: FindingSeverity;
   title: string;
@@ -48,4 +50,7 @@ export interface Finding {
   recommendation?: string;
   service?: ListeningService;
   icon?: "tick" | "warning";
+  whyFlagged?: string;
+  confidence?: FindingConfidence;
+  contextNotes?: string;
 }

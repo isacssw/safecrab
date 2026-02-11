@@ -61,6 +61,23 @@ function renderFinding(finding: Finding): string {
     lines.push(`${spacing.indent}${line}`);
   }
 
+  // Why flagged (if present)
+  if (finding.whyFlagged) {
+    lines.push("");
+    lines.push(colors.dim(`${spacing.indent}Why flagged:`));
+    lines.push(`${spacing.doubleIndent}${finding.whyFlagged}`);
+  }
+
+  // Confidence (if present)
+  if (finding.confidence) {
+    lines.push(colors.dim(`${spacing.indent}Confidence: ${finding.confidence}`));
+  }
+
+  // Context notes (if present)
+  if (finding.contextNotes) {
+    lines.push(colors.dim(`${spacing.indent}Context: ${finding.contextNotes}`));
+  }
+
   // Recommendation if present
   if (finding.recommendation) {
     lines.push("");

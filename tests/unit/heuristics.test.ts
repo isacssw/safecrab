@@ -88,6 +88,14 @@ describe("risk heuristics", () => {
 
     const warnings = findings.filter((f) => f.severity === "warning");
     expect(warnings.length).toBeGreaterThan(0);
+
+    // Check for enhanced UX fields
+    const publicExposure = warnings.find((f) => f.title === "Service exposed to public internet");
+    expect(publicExposure).toBeDefined();
+    expect(publicExposure?.description).toContain("appears reachable");
+    expect(publicExposure?.whyFlagged).toBeDefined();
+    expect(publicExposure?.confidence).toBe("medium");
+    expect(publicExposure?.contextNotes).toBeDefined();
   });
 
   it("should warn when tailscale is available but unused", () => {
@@ -262,5 +270,73 @@ describe("risk heuristics", () => {
     const tailscaleFinding = info.find((f) => f.title === "Tailscale is connected");
     expect(tailscaleFinding).toBeDefined();
     expect(tailscaleFinding?.description).toContain("active and available");
+  });
+
+  it("should provide port-specific recommendation for SSH (port 22)", () => {
+    const exposure: ServiceExposure = {
+      service: {
+        port: 22,
+        protocol: "tcp",
+        process: "sshd",
+        pid: 1234,
+        interfaces: ["eth0"],
+        boundIp: "0.0.0.0",
+      },
+      paths: ["public-internet"],
+    };
+
+    const findings = analyzeExposures([exposure], mockContext);
+
+    const sshWarning = findings.find((f) => f.severity === "warning" && f.service?.port === 22);
+    expect(sshWarning).toBeDefined();
+    expect(sshWarning?.description).toContain("SSH remote access");
+    expect(sshWarning?.recommendation).toContain("key-based authentication");
+    expect(sshWarning?.recommendation).toContain("Disable root login");
+  });
+
+  it("should provide port-specific recommendation for mDNS (port 5353)", () => {
+    const exposure: ServiceExposure = {
+      service: {
+        port: 5353,
+        protocol: "udp",
+        process: "avahi-daemon",
+        pid: 5678,
+        interfaces: ["eth0"],
+        boundIp: "0.0.0.0",
+      },
+      paths: ["public-internet"],
+    };
+
+    const findings = analyzeExposures([exposure], mockContext);
+
+    const mdnsWarning = findings.find((f) => f.severity === "warning" && f.service?.port === 5353);
+    expect(mdnsWarning).toBeDefined();
+    expect(mdnsWarning?.description).toContain("local network discovery");
+    expect(mdnsWarning?.recommendation).toContain("LAN-local discovery");
+    expect(mdnsWarning?.recommendation).toContain("should not be exposed to the internet");
+  });
+
+  it("should provide port-specific recommendation for Tailscale (port 41641)", () => {
+    const exposure: ServiceExposure = {
+      service: {
+        port: 41641,
+        protocol: "udp",
+        process: "tailscaled",
+        pid: 9012,
+        interfaces: ["eth0"],
+        boundIp: "0.0.0.0",
+      },
+      paths: ["public-internet"],
+    };
+
+    const findings = analyzeExposures([exposure], mockContext);
+
+    const tailscaleWarning = findings.find(
+      (f) => f.severity === "warning" && f.service?.port === 41641
+    );
+    expect(tailscaleWarning).toBeDefined();
+    expect(tailscaleWarning?.description).toContain("Tailscale WireGuard transport");
+    expect(tailscaleWarning?.recommendation).toContain("expected when Tailscale is actively used");
+    expect(tailscaleWarning?.recommendation).toContain("No action needed");
   });
 });
