@@ -83,6 +83,13 @@ Never skip layers. Transformations must be explicit:
 2. **Engine Layer** (`src/engine/`): Interpreted truth and logic
 3. **UI Layer** (`src/ui/`): Human-readable presentation
 
+For CLI UX/UI work, follow this low-risk sequence:
+1. Add or adjust CLI flags in `src/cli/index.ts`.
+2. Wire command behavior in `src/cli/commands/scan.ts`.
+3. Update output contracts in `src/ui/renderer.ts`.
+4. Tune section layouts in `src/ui/summary.ts` and `src/ui/findings.ts`.
+5. Adjust recommendation/copy wording in `src/engine/heuristics.ts` or `src/engine/port-profiles.ts` only when needed.
+
 ### Read-Only Guarantee
 
 Safecrab is **100% read-only**. Any contribution that modifies system state will be rejected.
@@ -95,12 +102,41 @@ Use calm, explanatory language:
 
 Avoid fear-mongering. Focus on education.
 
+### CLI Copy Guidelines
+
+When writing or editing finding text in `src/engine` and `src/ui`:
+- Lead with the plain-English outcome first (what is exposed and why it matters).
+- Keep default output concise and action-oriented.
+- Put one immediate step under `Action:` and reserve deeper reasoning for verbose mode.
+- Keep recommendations imperative and short in the first sentence.
+- Prefer neutral confidence language (`low`, `medium`, `high`) over alarmist wording.
+
 ## Testing Guidelines
 
 - **Unit tests** for parsers, heuristics, and pure logic
 - **Integration tests** for collectors (with mocked shell commands)
 - **Snapshot tests** for UI output
 - Aim for 80%+ code coverage on critical paths
+
+### CLI UX Validation Checklist
+
+For changes that affect terminal output, validate these scenarios locally:
+
+```bash
+npm run build
+node dist/cli/index.js scan --help
+node dist/cli/index.js scan
+node dist/cli/index.js scan --verbose
+node dist/cli/index.js scan --quiet
+node dist/cli/index.js scan --json
+```
+
+Acceptance checks:
+- Default output shows summary, top actions, expanded critical/warning findings, and collapsed info.
+- `--verbose` expands `Why flagged`, `Confidence`, `Context`, and recommendation details.
+- `--quiet` removes non-essential sections and keeps actionable findings only.
+- `--json` emits valid JSON with stats, findings, and exit-code semantics intact.
+- Exit code remains `1` when critical findings exist; otherwise `0`.
 
 ## Types of Contributions
 
@@ -131,7 +167,6 @@ Great areas to contribute:
 ### What NOT to Contribute (MVP)
 
 These are explicitly post-MVP:
-- JSON output format
 - Configuration files
 - Automated fixes
 - System modifications

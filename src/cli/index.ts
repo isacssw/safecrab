@@ -17,8 +17,15 @@ program
 program
   .command("scan")
   .description("Scan for exposed services and security issues")
-  .action(async () => {
-    await scanCommand();
+  .option("-v, --verbose", "show expanded details for each finding")
+  .option("-q, --quiet", "show only actionable findings")
+  .option("--json", "emit machine-readable JSON output")
+  .action(async (options: { verbose?: boolean; quiet?: boolean; json?: boolean }) => {
+    await scanCommand({
+      verbose: options.verbose ?? false,
+      quiet: options.quiet ?? false,
+      json: options.json ?? false,
+    });
   });
 
 // If no command specified, default to scan

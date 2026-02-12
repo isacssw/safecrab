@@ -59,6 +59,14 @@ sudo safecrab scan
 safecrab scan
 ```
 
+Options:
+
+```bash
+safecrab scan --verbose   # Show expanded why/context/details fields
+safecrab scan --quiet     # Show only actionable findings
+safecrab scan --json      # Emit machine-readable JSON report
+```
+
 For best visibility, run with root privileges:
 
 ```bash
@@ -67,7 +75,7 @@ sudo safecrab scan
 
 > **Note**: Running without root may hide some services. Safecrab will warn you but continue with best-effort scanning.
 
-## Example Output
+## Example Output (Default)
 
 ```
 🦀 Safecrab Security Scan
@@ -76,6 +84,12 @@ Summary:
   → 5 services detected
   → 2 publicly reachable
   → 1 critical issues
+  → 2 warnings
+  → 3 informational notes
+
+Top actions:
+  → Bind the service to localhost (127.0.0.1) or restrict access via firewall to ensure traffic only flows through the tunnel.
+  → Use key-based authentication only (disable password auth).
 
 CRITICAL
 ✖ Tunnel bypass detected
@@ -90,25 +104,41 @@ WARNINGS
 ⚠ Service exposed to public internet
   Port 22 (sshd) (SSH remote access) appears reachable from the public internet.
 
-  Why flagged:
-    Service bound to 0.0.0.0 on public interface(s): eth0.
-  Confidence: medium
-  Context: Firewall default policy is deny, but specific allow rules were not inspected.
-
-  Recommendation:
+  Action:
     Use key-based authentication only (disable password auth). Disable root login.
-    Consider allowlisting source IPs or using Tailscale for private access instead
-    of public exposure.
 
 INFO
-✔ Firewall is enabled
-  UFW firewall is active with default inbound policy: deny.
+  3 informational notes hidden.
+  Re-run with --verbose to see full details.
+  → Firewall is enabled
+  → Tailscale is connected
+  → Cloudflare Tunnel detected
 
-✔ Tailscale is connected
-  Tailscale VPN is active and available for secure access.
+Environment notes
+  ⚠ Running without root may hide some services and can show incomplete firewall or process info.
+  For full visibility, re-run with sudo.
 
 No changes were made to your system.
 ```
+
+## Example Output (Verbose)
+
+Use `--verbose` to expand `Why flagged`, `Confidence`, `Context`, and extended recommendation details.
+
+## Example Output (JSON)
+
+```bash
+safecrab scan --json
+```
+
+Returns a JSON object with:
+- report mode (`default`, `verbose`, or `quiet`)
+- summary stats
+- detected services
+- findings
+- top actions
+- environment notes
+- exit code
 
 ## Who Is This For?
 
@@ -256,7 +286,6 @@ Safecrab helps you understand your actual security posture, not your assumed sec
 **MVP (Current)**: Read-only scanning with beautiful terminal output
 
 **Post-MVP**:
-- JSON output for CI/CD integration
 - Automated fix suggestions
 - Config file support
 - GitHub Actions integration

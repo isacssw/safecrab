@@ -3,11 +3,18 @@
  */
 
 import type { Finding } from "../engine/types.js";
-import { colors, icons, spacing } from "./theme.js";
+import { bullet, colors, icons, spacing } from "./theme.js";
 
-export function renderFindings(findings: Finding[]): string {
+export interface FindingsRenderOptions {
+  verbose: boolean;
+  quiet: boolean;
+}
+
+export function renderFindings(findings: Finding[], options: FindingsRenderOptions): string {
   if (findings.length === 0) {
-    return `${spacing.section}${colors.success(`${icons.tick} No security issues detected.`)}`;
+    return options.quiet
+      ? colors.success(`${icons.tick} No actionable findings.`)
+      : `${spacing.section}${colors.success(`${icons.tick} No security issues detected.`)}`;
   }
 
   const lines: string[] = [];
@@ -19,35 +26,50 @@ export function renderFindings(findings: Finding[]): string {
 
   // Render critical findings
   if (critical.length > 0) {
-    lines.push(spacing.section);
+    if (!options.quiet && lines.length > 0) {
+      lines.push(spacing.section);
+    }
     lines.push(colors.critical.bold("CRITICAL"));
     for (const finding of critical) {
-      lines.push(renderFinding(finding));
+      lines.push(renderFinding(finding, options));
     }
   }
 
   // Render warnings
   if (warnings.length > 0) {
-    lines.push(spacing.section);
+    if (lines.length > 0) {
+      lines.push(spacing.section);
+    }
     lines.push(colors.warning.bold("WARNINGS"));
     for (const finding of warnings) {
-      lines.push(renderFinding(finding));
+      lines.push(renderFinding(finding, options));
     }
   }
 
   // Render info
-  if (info.length > 0) {
-    lines.push(spacing.section);
+  if (info.length > 0 && !options.quiet) {
+    if (lines.length > 0) {
+      lines.push(spacing.section);
+    }
     lines.push(colors.info.bold("INFO"));
-    for (const finding of info) {
-      lines.push(renderFinding(finding));
+
+    if (!options.verbose) {
+      lines.push(colors.dim(`${spacing.indent}${info.length} informational notes hidden.`));
+      lines.push(colors.dim(`${spacing.indent}Re-run with --verbose to see full details.`));
+      for (const finding of info) {
+        lines.push(bullet(`${finding.title}`));
+      }
+    } else {
+      for (const finding of info) {
+        lines.push(renderFinding(finding, options));
+      }
     }
   }
 
   return lines.join(spacing.line);
 }
 
-function renderFinding(finding: Finding): string {
+function renderFinding(finding: Finding, options: FindingsRenderOptions): string {
   const lines: string[] = [];
 
   // Icon + title
@@ -61,31 +83,57 @@ function renderFinding(finding: Finding): string {
     lines.push(`${spacing.indent}${line}`);
   }
 
-  // Why flagged (if present)
-  if (finding.whyFlagged) {
+  const recommendation = splitRecommendation(finding.recommendation);
+  if (recommendation.short) {
+    lines.push("");
+    lines.push(colors.dim(`${spacing.indent}Action:`));
+    lines.push(`${spacing.doubleIndent}${recommendation.short}`);
+  }
+
+  // Why flagged (verbose only)
+  if (finding.whyFlagged && options.verbose) {
     lines.push("");
     lines.push(colors.dim(`${spacing.indent}Why flagged:`));
     lines.push(`${spacing.doubleIndent}${finding.whyFlagged}`);
   }
 
-  // Confidence (if present)
-  if (finding.confidence) {
+  // Confidence (verbose only)
+  if (finding.confidence && options.verbose) {
     lines.push(colors.dim(`${spacing.indent}Confidence: ${finding.confidence}`));
   }
 
-  // Context notes (if present)
-  if (finding.contextNotes) {
+  // Context notes (verbose only)
+  if (finding.contextNotes && options.verbose) {
     lines.push(colors.dim(`${spacing.indent}Context: ${finding.contextNotes}`));
   }
 
-  // Recommendation if present
-  if (finding.recommendation) {
+  if (options.verbose && recommendation.detail) {
     lines.push("");
-    lines.push(colors.dim(`${spacing.indent}Recommendation:`));
-    lines.push(`${spacing.doubleIndent}${finding.recommendation}`);
+    lines.push(colors.dim(`${spacing.indent}Details:`));
+    lines.push(`${spacing.doubleIndent}${recommendation.detail}`);
   }
 
   return lines.join(spacing.line);
+}
+
+function splitRecommendation(recommendation?: string): { short?: string; detail?: string } {
+  if (!recommendation) {
+    return {};
+  }
+
+  const normalized = recommendation.replace(/\s+/g, " ").trim();
+  if (normalized.length === 0) {
+    return {};
+  }
+
+  const firstSentenceMatch = normalized.match(/^.+?[.!?](?:\s|$)/);
+  if (!firstSentenceMatch) {
+    return { short: normalized };
+  }
+
+  const short = firstSentenceMatch[0].trim();
+  const detail = normalized.slice(short.length).trim();
+  return detail ? { short, detail } : { short };
 }
 
 function getIcon(finding: Finding): string {

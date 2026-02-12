@@ -10,6 +10,7 @@ export interface SummaryStats {
   publiclyReachable: number;
   criticalFindings: number;
   warningFindings: number;
+  infoFindings: number;
   isRoot: boolean;
 }
 
@@ -20,22 +21,6 @@ export function renderSummary(stats: SummaryStats): string {
   lines.push(`${icons.crab} ${colors.crab.bold("Safecrab Security Scan")}`);
   lines.push("");
 
-  // Root warning if not running as root
-  if (!stats.isRoot) {
-    lines.push(
-      colors.warning(
-        `${icons.warning} Running without root may hide some services and can show incorrect firewall or process info.`
-      )
-    );
-    lines.push(colors.dim("   For full visibility, run Safecrab with sudo."));
-    lines.push(
-      colors.dim(
-        "   If the command is not found under sudo, install globally: sudo npm install -g safecrab"
-      )
-    );
-    lines.push("");
-  }
-
   // Summary statistics
   lines.push(header("Summary:"));
   lines.push(bullet(`${stats.totalServices} services detected`));
@@ -44,6 +29,9 @@ export function renderSummary(stats: SummaryStats): string {
 
   if (stats.warningFindings > 0) {
     lines.push(bullet(`${stats.warningFindings} warnings`));
+  }
+  if (stats.infoFindings > 0) {
+    lines.push(bullet(`${stats.infoFindings} informational notes`));
   }
 
   return lines.join(spacing.line);
@@ -66,6 +54,7 @@ export function calculateStats(
     publiclyReachable,
     criticalFindings: findings.filter((f) => f.severity === "critical").length,
     warningFindings: findings.filter((f) => f.severity === "warning").length,
+    infoFindings: findings.filter((f) => f.severity === "info").length,
     isRoot,
   };
 }
