@@ -86,4 +86,25 @@ another invalid line`;
     expect(services).toHaveLength(1);
     expect(services[0]?.port).toBe(22);
   });
+
+  it("should keep interfaces empty for unknown specific IP mapping", () => {
+    const output = `tcp   LISTEN 0      0      10.99.99.99:8080   0.0.0.0:*     users:(("node",pid=4321,fd=10))`;
+    const interfaceMap = new Map<string, string[]>();
+
+    const services = parseSSOutput(output, interfaceMap);
+
+    expect(services).toHaveLength(1);
+    expect(services[0]?.interfaces).toEqual([]);
+    expect(services[0]?.boundIp).toBe("10.99.99.99");
+  });
+
+  it("should not fallback wildcard bind to loopback when mapping is unavailable", () => {
+    const output = `tcp   LISTEN 0      0      0.0.0.0:3000      0.0.0.0:*     users:(("node",pid=777,fd=10))`;
+    const interfaceMap = new Map<string, string[]>();
+
+    const services = parseSSOutput(output, interfaceMap);
+
+    expect(services).toHaveLength(1);
+    expect(services[0]?.interfaces).toEqual([]);
+  });
 });

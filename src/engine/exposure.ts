@@ -44,7 +44,7 @@ export function resolveExposure(
 
   // If no paths determined, assume localhost
   if (paths.length === 0) {
-    return ["localhost-only"];
+    return isLoopbackBind(service.boundIp) ? ["localhost-only"] : ["public-internet"];
   }
 
   return paths;
@@ -54,21 +54,7 @@ export function resolveExposure(
  * Check if service is localhost-only
  */
 function isLocalhostOnly(service: ListeningService): boolean {
-  // Bound to localhost IP
-  if (
-    service.boundIp === "127.0.0.1" ||
-    service.boundIp === "::1" ||
-    service.boundIp === "localhost"
-  ) {
-    return true;
-  }
-
-  // Only bound to loopback interface
-  if (service.interfaces.length === 1 && service.interfaces[0] === "lo") {
-    return true;
-  }
-
-  return false;
+  return isLoopbackBind(service.boundIp);
 }
 
 /**
@@ -96,6 +82,11 @@ function isPublicExposed(service: ListeningService, context: NetworkContext): bo
   });
 
   if (!hasPublicInterface) {
+    // If interface mapping failed, bias toward possible exposure for non-loopback binds.
+    // This prevents false negatives where unknown mappings were previously treated as localhost.
+    if (service.interfaces.length === 0 && !isLoopbackBind(service.boundIp)) {
+      return true;
+    }
     return false;
   }
 
@@ -112,6 +103,10 @@ function isPublicExposed(service: ListeningService, context: NetworkContext): bo
   // (we can't determine specific rules without deep inspection)
   // This is intentionally conservative
   return true;
+}
+
+function isLoopbackBind(boundIp: string): boolean {
+  return boundIp === "127.0.0.1" || boundIp === "::1" || boundIp === "localhost";
 }
 
 /**

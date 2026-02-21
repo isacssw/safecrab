@@ -7,33 +7,69 @@ import { execCommand } from "../shell.js";
 
 export interface CloudflareStatus {
   tunnelDetected: boolean;
+  detectionConfidence: "high" | "low";
+  evidence: string[];
 }
 
 export async function collectCloudflareStatus(): Promise<CloudflareStatus> {
   try {
-    // Method 1: Check for cloudflared process
-    const psResult = await execCommand("ps", ["aux"], { ignoreErrors: true });
+    const evidence: string[] = [];
 
-    const hasProcess = psResult.success && psResult.stdout.includes("cloudflared");
+    // Method 1: Check for cloudflared process with strict matching.
+    const psResult = await execCommand("ps", ["-eo", "comm,args"], { ignoreErrors: true });
+    const hasProcess =
+      psResult.success &&
+      psResult.stdout
+        .split("\n")
+        .some((line) => /^\s*cloudflared(?:\s|$)/.test(line) || /\bcloudflared\b/.test(line));
+    if (hasProcess) {
+      evidence.push("process");
+    }
 
-    // Method 2: Check for cloudflared config directory
+    // Method 2: Check for cloudflared config directory and known config file.
     let hasConfig = false;
     try {
       await access("/etc/cloudflared", constants.F_OK);
       hasConfig = true;
+      evidence.push("config-dir");
     } catch {
       hasConfig = false;
     }
 
-    // Tunnel is detected if either condition is true
-    const tunnelDetected = hasProcess || hasConfig;
+    let hasConfigFile = false;
+    try {
+      await access("/etc/cloudflared/config.yml", constants.F_OK);
+      hasConfigFile = true;
+      evidence.push("config-file");
+    } catch {
+      try {
+        await access("/etc/cloudflared/config.yaml", constants.F_OK);
+        hasConfigFile = true;
+        evidence.push("config-file");
+      } catch {
+        hasConfigFile = false;
+      }
+    }
+
+    // Strong signal: running process.
+    // Weak signal: complete config footprint even if process not currently active.
+    const tunnelDetected = hasProcess || (hasConfig && hasConfigFile);
+    const detectionConfidence: "high" | "low" = hasProcess
+      ? "high"
+      : tunnelDetected
+        ? "low"
+        : "low";
 
     return {
       tunnelDetected,
+      detectionConfidence,
+      evidence,
     };
   } catch (error) {
     return {
       tunnelDetected: false,
+      detectionConfidence: "low",
+      evidence: [],
     };
   }
 }

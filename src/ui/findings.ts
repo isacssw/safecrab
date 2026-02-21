@@ -3,6 +3,7 @@
  */
 
 import type { Finding } from "../engine/types.js";
+import { sanitizeTerminalText } from "./sanitize.js";
 import { bullet, colors, icons, spacing } from "./theme.js";
 
 export interface FindingsRenderOptions {
@@ -75,10 +76,10 @@ function renderFinding(finding: Finding, options: FindingsRenderOptions): string
   // Icon + title
   const icon = getIcon(finding);
   const colorFn = getColor(finding.severity);
-  lines.push(colorFn(`${icon} ${finding.title}`));
+  lines.push(colorFn(`${icon} ${sanitizeTerminalText(finding.title)}`));
 
   // Description with indentation
-  const descLines = finding.description.split("\n");
+  const descLines = sanitizeTerminalText(finding.description).split("\n");
   for (const line of descLines) {
     lines.push(`${spacing.indent}${line}`);
   }
@@ -87,14 +88,14 @@ function renderFinding(finding: Finding, options: FindingsRenderOptions): string
   if (recommendation.short) {
     lines.push("");
     lines.push(colors.dim(`${spacing.indent}Action:`));
-    lines.push(`${spacing.doubleIndent}${recommendation.short}`);
+    lines.push(`${spacing.doubleIndent}${sanitizeTerminalText(recommendation.short)}`);
   }
 
   // Why flagged (verbose only)
   if (finding.whyFlagged && options.verbose) {
     lines.push("");
     lines.push(colors.dim(`${spacing.indent}Why flagged:`));
-    lines.push(`${spacing.doubleIndent}${finding.whyFlagged}`);
+    lines.push(`${spacing.doubleIndent}${sanitizeTerminalText(finding.whyFlagged)}`);
   }
 
   // Confidence (verbose only)
@@ -104,13 +105,15 @@ function renderFinding(finding: Finding, options: FindingsRenderOptions): string
 
   // Context notes (verbose only)
   if (finding.contextNotes && options.verbose) {
-    lines.push(colors.dim(`${spacing.indent}Context: ${finding.contextNotes}`));
+    lines.push(
+      colors.dim(`${spacing.indent}Context: ${sanitizeTerminalText(finding.contextNotes)}`)
+    );
   }
 
   if (options.verbose && recommendation.detail) {
     lines.push("");
     lines.push(colors.dim(`${spacing.indent}Details:`));
-    lines.push(`${spacing.doubleIndent}${recommendation.detail}`);
+    lines.push(`${spacing.doubleIndent}${sanitizeTerminalText(recommendation.detail)}`);
   }
 
   return lines.join(spacing.line);

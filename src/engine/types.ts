@@ -24,6 +24,8 @@ export interface NetworkContext {
   };
   cloudflare: {
     tunnelDetected: boolean;
+    detectionConfidence: "high" | "low";
+    evidence: string[];
   };
   interfaces: {
     name: string;

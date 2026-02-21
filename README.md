@@ -139,6 +139,9 @@ Returns a JSON object with:
 - top actions
 - environment notes
 - exit code
+- output sanitization mode (`terminal-only`)
+
+Note: terminal output is sanitized for control sequences. JSON output is raw structured data intended for machine consumers.
 
 ## Who Is This For?
 
@@ -177,6 +180,15 @@ SSH port 22 is reachable from the public internet without firewall protection.
 - ❌ Write any files
 
 **Safecrab is 100% read-only.** It only observes and reports.
+
+## Known Detection Limits
+
+Safecrab is conservative, but detection quality depends on host visibility and system command output formats:
+
+- Running without root can hide services/process details and firewall state.
+- Interface/address correlation is best-effort and may be incomplete on unusual network setups.
+- Cloudflare Tunnel detection can be high-confidence (active process) or low-confidence (passive config evidence).
+- Safecrab infers exposure from local system state; it does not perform active external probing.
 
 ## How It Works
 
@@ -258,6 +270,9 @@ npm run build
 
 # Run tests
 npm test
+
+# Validate release quality gate (lint + tests + build)
+npm run verify:release
 
 # Run locally
 npm run build && node dist/cli/index.js scan

@@ -30,6 +30,8 @@ export async function buildNetworkContext(): Promise<NetworkContext> {
     },
     cloudflare: {
       tunnelDetected: cloudflare.tunnelDetected,
+      detectionConfidence: cloudflare.detectionConfidence,
+      evidence: cloudflare.evidence,
     },
     interfaces,
   };

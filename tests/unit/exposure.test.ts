@@ -11,6 +11,7 @@ describe("exposure resolution", () => {
     firewall: {
       enabled: false,
       defaultInbound: "allow",
+      statusKnown: true,
     },
     tailscale: {
       installed: false,
@@ -18,6 +19,8 @@ describe("exposure resolution", () => {
     },
     cloudflare: {
       tunnelDetected: false,
+      detectionConfidence: "low",
+      evidence: [],
     },
     interfaces: [
       { name: "lo", ips: ["127.0.0.1"], isPublic: false },
@@ -89,6 +92,8 @@ describe("exposure resolution", () => {
       ...mockContext,
       cloudflare: {
         tunnelDetected: true,
+        detectionConfidence: "high",
+        evidence: ["process"],
       },
     };
 
@@ -105,5 +110,21 @@ describe("exposure resolution", () => {
 
     expect(paths).toContain("cloudflare-tunnel");
     expect(paths).toContain("public-internet");
+  });
+
+  it("should treat unknown interface mapping as potentially public", () => {
+    const service: ListeningService = {
+      port: 8081,
+      protocol: "tcp",
+      process: "node",
+      pid: 8888,
+      interfaces: [],
+      boundIp: "0.0.0.0",
+    };
+
+    const paths = resolveExposure(service, mockContext);
+
+    expect(paths).toContain("public-internet");
+    expect(paths).not.toContain("localhost-only");
   });
 });

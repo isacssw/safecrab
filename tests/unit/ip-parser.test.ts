@@ -56,4 +56,16 @@ describe("ip-parser", () => {
     expect(eth0?.isPublic).toBe(true);
     expect(tailscale0?.isPublic).toBe(false);
   });
+
+  it("should normalize IPv6 variants and strip zone identifiers", () => {
+    const output = `2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>
+    inet6 FE80::ABCD%eth0/64 scope link
+3: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP>
+    inet6 2001:DB8::1/64 scope global`;
+
+    const ipMap = parseIPAddr(output);
+
+    expect(ipMap.get("fe80::abcd")).toEqual(["eth0"]);
+    expect(ipMap.get("2001:db8::1")).toEqual(["wlan0"]);
+  });
 });

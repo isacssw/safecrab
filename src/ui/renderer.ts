@@ -27,6 +27,7 @@ export interface JsonScanReport {
   findings: Finding[];
   topActions: string[];
   environmentNotes: string[];
+  outputSanitization: "terminal-only";
 }
 
 /**
@@ -72,6 +73,7 @@ export function buildJsonReport(report: ScanReport, options: ReportRenderOptions
     findings: report.findings,
     topActions: collectTopActions(report.findings),
     environmentNotes: buildEnvironmentNotes(root),
+    outputSanitization: "terminal-only",
   };
 }
 

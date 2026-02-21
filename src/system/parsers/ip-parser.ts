@@ -31,9 +31,9 @@ export function parseIPAddr(output: string): Map<string, string[]> {
     }
 
     // IPv4 address line: "inet 192.168.1.100/24 ..."
-    const inet4Match = trimmed.match(/^inet\s+([0-9.]+)/);
+    const inet4Match = trimmed.match(/^inet\s+([^\s/]+)/);
     if (inet4Match && currentInterface) {
-      const ip = inet4Match[1];
+      const ip = normalizeIp(inet4Match[1] ?? "");
       if (ip) {
         const interfaces = ipToInterfaces.get(ip) ?? [];
         interfaces.push(currentInterface);
@@ -43,9 +43,9 @@ export function parseIPAddr(output: string): Map<string, string[]> {
     }
 
     // IPv6 address line: "inet6 fe80::1/64 ..."
-    const inet6Match = trimmed.match(/^inet6\s+([0-9a-f:]+)/);
+    const inet6Match = trimmed.match(/^inet6\s+([^\s/]+)/);
     if (inet6Match && currentInterface) {
-      const ip = inet6Match[1];
+      const ip = normalizeIp(inet6Match[1] ?? "");
       if (ip) {
         const interfaces = ipToInterfaces.get(ip) ?? [];
         interfaces.push(currentInterface);
@@ -55,6 +55,16 @@ export function parseIPAddr(output: string): Map<string, string[]> {
   }
 
   return ipToInterfaces;
+}
+
+function normalizeIp(ip: string): string {
+  const trimmed = ip.trim();
+  if (!trimmed) {
+    return "";
+  }
+  // Strip scope zone if present (for example fe80::1%eth0).
+  const withoutZone = trimmed.split("%")[0] ?? trimmed;
+  return withoutZone.toLowerCase();
 }
 
 /**

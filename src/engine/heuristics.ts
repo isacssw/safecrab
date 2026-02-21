@@ -257,11 +257,14 @@ function generateContextFindings(context: NetworkContext): Finding[] {
 
   // Cloudflare tunnel
   if (context.cloudflare.tunnelDetected) {
+    const confidenceNote =
+      context.cloudflare.detectionConfidence === "low"
+        ? " Detection confidence is low (passive signals only)."
+        : "";
     findings.push({
       severity: "info",
       title: "Cloudflare Tunnel detected",
-      description:
-        "A Cloudflare Tunnel is present. Ensure services are only accessible through the tunnel.",
+      description: `A Cloudflare Tunnel is present. Ensure services are only accessible through the tunnel.${confidenceNote}`,
     });
   }
 

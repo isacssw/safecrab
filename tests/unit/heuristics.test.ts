@@ -19,6 +19,8 @@ describe("risk heuristics", () => {
     },
     cloudflare: {
       tunnelDetected: false,
+      detectionConfidence: "low",
+      evidence: [],
     },
     interfaces: [
       { name: "lo", ips: ["127.0.0.1"], isPublic: false },
@@ -41,7 +43,11 @@ describe("risk heuristics", () => {
 
     const contextWithTunnel: NetworkContext = {
       ...mockContext,
-      cloudflare: { tunnelDetected: true },
+      cloudflare: {
+        tunnelDetected: true,
+        detectionConfidence: "high",
+        evidence: ["process"],
+      },
     };
 
     const findings = analyzeExposures([exposure], contextWithTunnel);
@@ -49,6 +55,22 @@ describe("risk heuristics", () => {
     const critical = findings.filter((f) => f.severity === "critical");
     expect(critical.length).toBeGreaterThan(0);
     expect(critical.some((f) => f.title.includes("bypass"))).toBe(true);
+  });
+
+  it("should include low-confidence note for cloudflare passive detection", () => {
+    const contextWithLowConfidenceTunnel: NetworkContext = {
+      ...mockContext,
+      cloudflare: {
+        tunnelDetected: true,
+        detectionConfidence: "low",
+        evidence: ["config-dir", "config-file"],
+      },
+    };
+
+    const findings = analyzeExposures([], contextWithLowConfidenceTunnel);
+    const cloudflareInfo = findings.find((f) => f.title === "Cloudflare Tunnel detected");
+    expect(cloudflareInfo).toBeDefined();
+    expect(cloudflareInfo?.description).toContain("confidence is low");
   });
 
   it("should escalate AI services to critical", () => {

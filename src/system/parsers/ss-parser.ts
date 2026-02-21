@@ -120,7 +120,7 @@ function parseAddress(addr: string): { ip: string; port: number | null } {
   if (ipv6Match) {
     const port = Number.parseInt(ipv6Match[2] ?? "", 10);
     return {
-      ip: ipv6Match[1] ?? "::",
+      ip: normalizeIp(ipv6Match[1] ?? "::"),
       port: Number.isNaN(port) ? null : port,
     };
   }
@@ -130,7 +130,7 @@ function parseAddress(addr: string): { ip: string; port: number | null } {
   if (ipv4Match) {
     const port = Number.parseInt(ipv4Match[2] ?? "", 10);
     return {
-      ip: ipv4Match[1] ?? "0.0.0.0",
+      ip: normalizeIp(ipv4Match[1] ?? "0.0.0.0"),
       port: Number.isNaN(port) ? null : port,
     };
   }
@@ -146,6 +146,10 @@ function parseAddress(addr: string): { ip: string; port: number | null } {
   }
 
   return { ip: "0.0.0.0", port: null };
+}
+
+function normalizeIp(ip: string): string {
+  return ip.trim().toLowerCase();
 }
 
 /**
@@ -164,11 +168,13 @@ function mapIpToInterfaces(ip: string, interfaceMap: Map<string, string[]>): str
 
   // Wildcard - bind to all interfaces
   if (ip === "0.0.0.0" || ip === "::" || ip === "*") {
-    const allInterfaces: string[] = [];
+    const allInterfaces = new Set<string>();
     for (const ifaces of interfaceMap.values()) {
-      allInterfaces.push(...ifaces);
+      for (const iface of ifaces) {
+        allInterfaces.add(iface);
+      }
     }
-    return allInterfaces.length > 0 ? allInterfaces : ["lo"];
+    return Array.from(allInterfaces);
   }
 
   // Specific IP - look up which interface(s) have this IP
@@ -177,6 +183,6 @@ function mapIpToInterfaces(ip: string, interfaceMap: Map<string, string[]>): str
     return interfaces;
   }
 
-  // Unknown - assume localhost for safety
-  return ["lo"];
+  // Unknown mapping - return empty and let exposure engine use conservative classification
+  return [];
 }
