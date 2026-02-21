@@ -1,6 +1,6 @@
 {
   "name": "safecrab",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Security scanner for Linux VPS environments - detect accidental service exposure",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,14 +21,22 @@
     "verify:release": "npm run lint && npm test -- --run && npm run build",
     "prepublishOnly": "npm run verify:release"
   },
-  "keywords": ["security", "scanner", "vps", "cli", "exposure-detection"],
+  "keywords": [
+    "security",
+    "scanner",
+    "vps",
+    "cli",
+    "exposure-detection"
+  ],
   "author": "Isac Silva",
   "repository": {
     "type": "git",
     "url": "https://github.com/isacssw/safecrab.git"
   },
   "license": "MIT",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",
